@@ -181,6 +181,7 @@ from .keys import (
     PairingKeys,
 )
 from .pairing import PairingConfig
+from . import hfp
 from . import gatt_client
 from . import gatt_server
 from . import smp
