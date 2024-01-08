@@ -97,8 +97,8 @@ async def main():
 
         # Create a device
         device = Device.from_config_file_with_hci(sys.argv[1], hci_source, hci_sink)
-        if not device.hfp_configuration:
-            hfp_configuration = configuration
+        if device.hfp_configuration:
+            configuration = device.hfp_configuration
 
         device.classic_enabled = True
 
@@ -106,12 +106,12 @@ async def main():
         rfcomm_server = RfcommServer(device)
 
         # Listen for incoming DLC connections
-        channel_number = rfcomm_server.listen(lambda dlc: on_dlc(dlc, hfp_configuration))
+        channel_number = rfcomm_server.listen(lambda dlc: on_dlc(dlc, configuration))
         print(f'### Listening for connection on channel {channel_number}')
 
         # Advertise the HFP RFComm channel in the SDP
         device.sdp_service_records = {
-            0x00010001: hfp.sdp_records(0x00010001, channel_number, hfp_configuration)
+            0x00010001: hfp.sdp_records(0x00010001, channel_number, configuration)
         }
 
         # Let's go!
