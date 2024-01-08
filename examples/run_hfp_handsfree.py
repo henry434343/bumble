@@ -75,11 +75,30 @@ async def main():
     async with await open_transport_or_link(sys.argv[2]) as (hci_source, hci_sink):
         print('<<< connected')
 
+        # Hands-Free profile configuration.
+        configuration = hfp.Configuration(
+            supported_hf_features=[
+                hfp.HfFeature.THREE_WAY_CALLING,
+                hfp.HfFeature.REMOTE_VOLUME_CONTROL,
+                hfp.HfFeature.ENHANCED_CALL_STATUS,
+                hfp.HfFeature.ENHANCED_CALL_CONTROL,
+                hfp.HfFeature.CODEC_NEGOTIATION,
+                hfp.HfFeature.HF_INDICATORS,
+                hfp.HfFeature.ESCO_S4_SETTINGS_SUPPORTED,
+            ],
+            supported_hf_indicators=[
+                hfp.HfIndicator.BATTERY_LEVEL,
+            ],
+            supported_audio_codecs=[
+                hfp.AudioCodec.CVSD,
+                hfp.AudioCodec.MSBC,
+            ],
+        )
+
         # Create a device
         device = Device.from_config_file_with_hci(sys.argv[1], hci_source, hci_sink)
         if not device.hfp_configuration:
-            print('no hfp configuration on device file')
-            return
+            hfp_configuration = configuration
 
         device.classic_enabled = True
 
@@ -87,12 +106,12 @@ async def main():
         rfcomm_server = RfcommServer(device)
 
         # Listen for incoming DLC connections
-        channel_number = rfcomm_server.listen(lambda dlc: on_dlc(dlc, device.hfp_configuration))
+        channel_number = rfcomm_server.listen(lambda dlc: on_dlc(dlc, hfp_configuration))
         print(f'### Listening for connection on channel {channel_number}')
 
         # Advertise the HFP RFComm channel in the SDP
         device.sdp_service_records = {
-            0x00010001: hfp.sdp_records(0x00010001, channel_number, device.hfp_configuration)
+            0x00010001: hfp.sdp_records(0x00010001, channel_number, hfp_configuration)
         }
 
         # Let's go!
