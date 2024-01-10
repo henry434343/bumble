@@ -980,6 +980,7 @@ class Host(AbortableEventEmitter):
         )
 
     def on_hci_user_confirmation_request_event(self, event):
+        print("on_hci_user_confirmation_request_event")
         self.emit(
             'authentication_user_confirmation_request',
             event.bd_addr,

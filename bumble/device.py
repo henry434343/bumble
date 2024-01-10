@@ -3316,6 +3316,7 @@ class Device(CompositeEventEmitter):
     # FIXME: Explore a delegate-model for BR/EDR wait connection #56.
     @host_event_handler
     def on_connection_request(self, bd_addr, class_of_device, link_type):
+        print("on_connection_request")
         logger.debug(f'*** Connection request: {bd_addr}')
 
         # Handle SCO request.
@@ -3436,6 +3437,7 @@ class Device(CompositeEventEmitter):
     @host_event_handler
     @with_connection_from_handle
     def on_connection_authentication(self, connection):
+        print("on_connection_authentication")
         logger.debug(
             f'*** Connection Authentication: [0x{connection.handle:04X}] '
             f'{connection.peer_address} as {connection.role_name}'
@@ -3457,6 +3459,7 @@ class Device(CompositeEventEmitter):
     @with_connection_from_address
     def on_authentication_io_capability_request(self, connection):
         # Ask what the pairing config should be for this connection
+        print("on_authentication_io_capability_request")
         pairing_config = self.pairing_config_factory(connection)
 
         # Compute the authentication requirements
@@ -3472,7 +3475,8 @@ class Device(CompositeEventEmitter):
                 HCI_MITM_REQUIRED_GENERAL_BONDING_AUTHENTICATION_REQUIREMENTS,
             ),
         )[1 if pairing_config.bonding else 0][1 if pairing_config.mitm else 0]
-
+        print(f"authentication_requirements = {authentication_requirements}")
+        print(f"pairing_config.delegate.classic_io_capability = {pairing_config.delegate.classic_io_capability}")
         # Respond
         self.host.send_command_sync(
             HCI_IO_Capability_Request_Reply_Command(
@@ -3489,6 +3493,7 @@ class Device(CompositeEventEmitter):
     def on_authentication_io_capability_response(
         self, connection, io_capability, authentication_requirements
     ):
+        print("on_authentication_io_capability_response")
         connection.peer_pairing_io_capability = io_capability
         connection.peer_pairing_authentication_requirements = (
             authentication_requirements
@@ -3499,23 +3504,28 @@ class Device(CompositeEventEmitter):
     @with_connection_from_address
     def on_authentication_user_confirmation_request(self, connection, code) -> None:
         # Ask what the pairing config should be for this connection
+        print("on_authentication_user_confirmation_request")
         pairing_config = self.pairing_config_factory(connection)
         io_capability = pairing_config.delegate.classic_io_capability
         peer_io_capability = connection.peer_pairing_io_capability
 
         async def confirm() -> bool:
             # Ask the user to confirm the pairing, without display
+            print("confirm")
             return await pairing_config.delegate.confirm()
 
         async def auto_confirm() -> bool:
             # Ask the user to auto-confirm the pairing, without display
+            print("auto_confirm")
             return await pairing_config.delegate.confirm(auto=True)
 
         async def display_confirm() -> bool:
             # Display the code and ask the user to compare
+            print("display_confirm")
             return await pairing_config.delegate.compare_numbers(code, digits=6)
 
         async def display_auto_confirm() -> bool:
+            print("display_auto_confirm")
             # Display the code to the user and ask the delegate to auto-confirm
             await pairing_config.delegate.display_number(code, digits=6)
             return await pairing_config.delegate.confirm(auto=True)
@@ -3609,6 +3619,7 @@ class Device(CompositeEventEmitter):
     def on_pin_code_request(self, connection):
         # Classic legacy pairing
         # Ask what the pairing config should be for this connection
+        print("on_pin_code_request")
         pairing_config = self.pairing_config_factory(connection)
         io_capability = pairing_config.delegate.classic_io_capability
 
@@ -3652,6 +3663,7 @@ class Device(CompositeEventEmitter):
     @with_connection_from_address
     def on_authentication_user_passkey_notification(self, connection, passkey):
         # Ask what the pairing config should be for this connection
+        print("on_authentication_user_passkey_notification")
         pairing_config = self.pairing_config_factory(connection)
 
         # Show the passkey to the user
